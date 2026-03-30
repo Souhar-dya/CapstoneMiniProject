@@ -38,6 +38,11 @@ def get_cdr_by_user(user_id: str):
     return cdrs
 
 
+def get_all_cdr():
+    cdrs = cdr_repository.get_all_cdrs()
+    return cdrs
+
+
 def get_cdr_summary(user_id: str):
     user = user_repository.get_user_by_id(user_id)
 

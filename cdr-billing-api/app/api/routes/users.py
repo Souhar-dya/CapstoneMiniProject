@@ -7,6 +7,13 @@ from app.schemas.user_schema import UserOut
 router = APIRouter(prefix="/users", tags=["users"])
 
 
+@router.get("/me", response_model=UserOut)
+async def get_current_user_info(
+    current_user: UserModel = Depends(get_current_user),
+):
+    return await user_controller.get_user(current_user.id)
+
+
 @router.get("", response_model=list[UserOut])
 async def list_users(
     _: UserModel = Depends(require_admin),

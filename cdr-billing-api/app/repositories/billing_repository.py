@@ -51,6 +51,25 @@ def get_billing_by_user_id(user_id: str) -> list[BillingModel]:
     return result
 
 
+def get_all_billings() -> list[BillingModel]:
+    billings = collection.find()
+
+    result = []
+    for billing in billings:
+        result.append(
+            BillingModel(
+                id=str(billing["_id"]),
+                user_id=str(billing["user_id"]),
+                billing_cycle=billing["billing_cycle"],
+                total_amount=billing["total_amount"],
+                status=billing["status"],
+                generated_at=billing["generated_at"],
+            )
+        )
+
+    return result
+
+
 def get_billing_by_user_and_cycle(user_id: str, billing_cycle: str) -> BillingModel | None:
     billing = collection.find_one({
         "user_id": ObjectId(user_id),
@@ -77,22 +96,3 @@ def update_billing(billing_id: str, update_data: dict) -> bool:
     )
 
     return result.modified_count > 0
-
-
-def get_all_billings() -> list[BillingModel]:
-    billings = collection.find()
-
-    result = []
-    for billing in billings:
-        result.append(
-            BillingModel(
-                id=str(billing["_id"]),
-                user_id=str(billing["user_id"]),
-                billing_cycle=billing["billing_cycle"],
-                total_amount=billing["total_amount"],
-                status=billing["status"],
-                generated_at=billing["generated_at"],
-            )
-        )
-
-    return result

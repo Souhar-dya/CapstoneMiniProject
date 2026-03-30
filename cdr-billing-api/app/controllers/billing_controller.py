@@ -39,6 +39,24 @@ async def get_user_billing(user_id: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+async def get_all_billing():
+    try:
+        billings = billing_service.get_all_billings()
+        result = []
+        for billing in billings:
+            result.append({
+                "id": billing.id,
+                "user_id": billing.user_id,
+                "billing_cycle": billing.billing_cycle,
+                "total_amount": billing.total_amount,
+                "status": billing.status,
+                "generated_at": billing.generated_at
+            })
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 async def pay_billing(billing_id: str):
     try:
         billing = billing_service.pay_billing(billing_id)

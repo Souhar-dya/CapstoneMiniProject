@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from app.controllers import billing_controller
-from app.core.dependencies import require_admin, require_customer
-from app.models.user_model import UserModel
+from app.core.dependencies import require_admin, require_customer, require_customer_or_admin
+from app.models.user_model import UserModel, Role
 from app.repositories import billing_repository
 from app.schemas.billing_schema import BillingOut
 
 router = APIRouter(prefix="/billing", tags=["billing"])
+
 
 
 @router.post("/generate")
@@ -19,21 +20,37 @@ async def generate_billing(
 
 @router.get("/my", response_model=list[BillingOut])
 async def get_my_billing(
-    current_user: UserModel = Depends(require_customer),
+    current_user: UserModel = Depends(require_customer_or_admin),
 ):
+    # Admins can see all billing, customers see only their own
+    if current_user.role == Role.admin:
+        return await billing_controller.get_all_billing()
     return await billing_controller.get_user_billing(current_user.id)
+
+
+@router.get("/user/{user_id}", response_model=list[BillingOut])
+async def get_user_billing(
+    user_id: str = Path(..., pattern=r"^[a-fA-F0-9]{24}$"),
+    current_user: UserModel = Depends(require_admin),
+):
+    """
+    Admin-only endpoint to get billing for a specific user.
+    Useful for viewing billing of another user or generating reports.
+    """
+    return await billing_controller.get_user_billing(user_id)
+
 
 
 @router.put("/pay/{billing_id}", response_model=BillingOut)
 async def pay_billing(
     billing_id: str = Path(..., pattern=r"^[a-fA-F0-9]{24}$"),
-    current_user: UserModel = Depends(require_customer),
+    current_user: UserModel = Depends(require_customer_or_admin),
 ):
     billing = billing_repository.get_billing_by_id(billing_id)
     if not billing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Billing not found")
 
-    if current_user.id != billing.user_id:
+    if current_user.role != Role.admin and current_user.id != billing.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only pay your own billing"

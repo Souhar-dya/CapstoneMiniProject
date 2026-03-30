@@ -25,7 +25,7 @@ app.add_middleware(RateLimiterMiddleware, requests_per_minute=100)
 
 register_exception_handlers(app)
 
-app.include_router(router)
+app.include_router(router, prefix="/api")
 
 
 @app.get("/health")
@@ -39,12 +39,12 @@ async def root():
         "message": "CDR Billing System API",
         "version": "1.0.0",
         "endpoints": {
-            "auth": "/auth",
-            "users": "/users",
-            "cdr": "/cdr",
-            "billing": "/billing",
-            "plans": "/plans",
-            "admin": "/admin"
+            "auth": "/api/auth",
+            "users": "/api/users",
+            "cdr": "/api/cdr",
+            "billing": "/api/billing",
+            "plans": "/api/plans",
+            "admin": "/api/admin"
         }
     }
 

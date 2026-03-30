@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.core.config import settings
@@ -7,19 +7,25 @@ from app.core.database import db
 from app.models.user_model import Role, UserModel
 from app.repositories import user_repository
 
-def get_database():
-    return db
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> UserModel:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)
+) -> UserModel:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if not credentials:
+        raise credentials_exception
+
+    token = credentials.credentials
 
     try:
         payload = jwt.decode(
@@ -59,6 +65,17 @@ def require_customer(current_user: UserModel = Depends(get_current_user)) -> Use
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
         detail="Customer access required"
+    )
+
+
+def require_customer_or_admin(current_user: UserModel = Depends(get_current_user)) -> UserModel:
+    """Allow access to both customer and admin users."""
+    if current_user.role in (Role.customer, Role.admin):
+        return current_user
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Access required"
     )
 
 
