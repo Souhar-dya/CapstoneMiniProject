@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import './Auth.css'
 import { api } from '../api/api'
 
 export default function Register() {
@@ -121,36 +120,40 @@ export default function Register() {
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1>Create Account</h1>
-        <form onSubmit={handleRegister}>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-500 to-purple-600 p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-12 w-full max-w-md animate-slide-up">
+        <h1 className="text-center text-4xl font-bold text-gray-900 mb-2">Create Account</h1>
+        <p className="text-center text-gray-600 text-sm mb-8">Join the CDR Billing System</p>
+        
+        <form onSubmit={handleRegister} className="space-y-5">
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name" className="form-label">Full Name</label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your full name"
+              className="form-input"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email" className="form-label">Email Address</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
+              className="form-input"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="mobileNumber">Mobile Number</label>
+            <label htmlFor="mobileNumber" className="form-label">Mobile Number</label>
             <input
               id="mobileNumber"
               type="tel"
@@ -158,17 +161,18 @@ export default function Register() {
               onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
               placeholder="Enter 10-digit mobile number"
               maxLength="10"
+              className="form-input"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="planId">Select Plan</label>
+            <label htmlFor="planId" className="form-label">Select Plan</label>
             {loadingPlans && plans.length === 0 ? (
-              <p style={{ color: '#667eea', margin: '10px 0', fontSize: '12px' }}>Loading plans...</p>
+              <p className="text-blue-500 text-xs my-2">Loading plans...</p>
             ) : null}
             {!loadingPlans && plans.length === 0 ? (
-              <p style={{ color: '#dc3545', margin: '10px 0', fontSize: '12px' }}>No plans available. Check backend.</p>
+              <p className="text-red-600 text-xs my-2">No plans available. Check backend.</p>
             ) : null}
             <select
               id="planId"
@@ -178,6 +182,7 @@ export default function Register() {
                 setPlanId(e.target.value)
               }}
               disabled={plans.length === 0}
+              className="form-select disabled:opacity-50 disabled:cursor-not-allowed"
               required
             >
               <option value="">
@@ -193,44 +198,53 @@ export default function Register() {
               })}
             </select>
             {planId && (
-              <p style={{ fontSize: '11px', color: '#666', marginTop: '5px' }}>
-                Selected: {planId}
+              <p className="text-xs text-gray-600 mt-2">
+                Selected: <span className="font-semibold text-blue-500">{planId.slice(0, 8)}...</span>
               </p>
             )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" className="form-label">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password (min 6 characters)"
+              className="form-input"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
             <input
               id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your password"
+              className="form-input"
               required
             />
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="alert alert-error">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading} className="btn-primary mt-8">
             {loading ? 'Creating Account...' : 'Register'}
           </button>
 
-          <div className="auth-link">
-            Already have an account? <Link to="/login">Login here</Link>
+          <div className="text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-blue-500 hover:text-blue-600 transition-colors">
+              Login here
+            </Link>
           </div>
         </form>
       </div>

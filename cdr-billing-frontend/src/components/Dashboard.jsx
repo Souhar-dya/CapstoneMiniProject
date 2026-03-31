@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './Dashboard.css'
 import { api } from '../api/api'
 
 export default function Dashboard() {
@@ -136,57 +135,97 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>CDR Billing Dashboard</h1>
-        <div className="header-right">
-          <span className="user-name">Welcome, {user.name || 'User'}</span>
-          {user.role === 'admin' && (
-            <button className="generate-btn" onClick={handleGenerateData}>
-              Generate Sample Data
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
+      <header className="bg-gradient-to-r from-blue-500 via-blue-500 to-purple-600 text-white px-8 py-6 shadow-lg">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold">CDR Billing Dashboard</h1>
+          <div className="flex items-center gap-6">
+            <span className="text-sm font-semibold opacity-90">Welcome, <span className="text-lg">{user.name || 'User'}</span></span>
+            {user.role === 'admin' && (
+              <button 
+                onClick={handleGenerateData}
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+              >
+                Generate Sample Data
+              </button>
+            )}
+            <button 
+              onClick={handleLogout}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 border-2 border-white/40 text-white rounded-lg font-semibold transition-all duration-300 hover:-translate-y-0.5"
+            >
+              Logout
             </button>
-          )}
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
-          </button>
+          </div>
         </div>
       </header>
 
-      <nav className="tabs">
-        {user.role === 'admin' && (
+      <nav className="bg-white border-b-2 border-gray-200 shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto flex gap-0">
+          {user.role === 'admin' && (
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
+                activeTab === 'users'
+                  ? 'border-blue-500 text-blue-500 bg-blue-50'
+                  : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
+              }`}
+            >
+              Users
+            </button>
+          )}
           <button
-            className={`tab ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
+            onClick={() => setActiveTab('plans')}
+            className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
+              activeTab === 'plans'
+                ? 'border-blue-500 text-blue-500 bg-blue-50'
+                : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
+            }`}
           >
-            Users
+            Plans
           </button>
-        )}
-        <button
-          className={`tab ${activeTab === 'plans' ? 'active' : ''}`}
-          onClick={() => setActiveTab('plans')}
-        >
-          Plans
-        </button>
-        <button
-          className={`tab ${activeTab === 'billing' ? 'active' : ''}`}
-          onClick={() => setActiveTab('billing')}
-        >
-          Billing
-        </button>
-        <button
-          className={`tab ${activeTab === 'cdr' ? 'active' : ''}`}
-          onClick={() => setActiveTab('cdr')}
-        >
-          CDR
-        </button>
+          <button
+            onClick={() => setActiveTab('billing')}
+            className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
+              activeTab === 'billing'
+                ? 'border-blue-500 text-blue-500 bg-blue-50'
+                : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
+            }`}
+          >
+            Billing
+          </button>
+          <button
+            onClick={() => setActiveTab('cdr')}
+            className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
+              activeTab === 'cdr'
+                ? 'border-blue-500 text-blue-500 bg-blue-50'
+                : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
+            }`}
+          >
+            CDR
+          </button>
+        </div>
       </nav>
 
-      <div className="content">
-        {loading && <p className="loading">Loading...</p>}
-        {error && <p className="error">{error}</p>}
+      <div className="flex-1 px-8 py-8 max-w-7xl mx-auto w-full">
+        {loading && (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+              <p className="text-gray-600 font-semibold">Loading...</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="alert alert-error">
+            {error}
+          </div>
+        )}
 
         {!loading && !error && data.length === 0 && (
-          <p className="no-data">No data available</p>
+          <div className="text-center py-16">
+            <p className="text-gray-500 text-lg font-medium">No data available</p>
+          </div>
         )}
 
         {!loading && !error && data.length > 0 && (
@@ -203,7 +242,9 @@ export default function Dashboard() {
                 {data.map((item, idx) => (
                   <tr key={idx}>
                     {Object.values(item).map((value, i) => (
-                      <td key={i}>{String(value).substring(0, 50)}</td>
+                      <td key={i} className="truncate" title={String(value)}>
+                        {String(value).substring(0, 50)}
+                      </td>
                     ))}
                   </tr>
                 ))}
