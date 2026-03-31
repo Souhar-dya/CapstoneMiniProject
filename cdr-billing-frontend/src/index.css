@@ -135,31 +135,27 @@ p {
 
 /* Table styles */
 .table-container {
-  @apply bg-white rounded-xl shadow-md overflow-x-auto;
+  @apply bg-white rounded-lg border border-gray-200 overflow-x-auto;
 }
 
 .data-table {
-  @apply w-full border-collapse;
+  @apply w-full border-collapse text-left;
 }
 
 .data-table thead {
-  @apply bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200;
+  @apply bg-gray-50 border-b border-gray-200;
 }
 
 .data-table th {
-  @apply px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider;
+  @apply px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap;
 }
 
 .data-table td {
-  @apply px-6 py-4 border-b border-gray-100 text-sm text-gray-700;
+  @apply px-6 py-4 border-b border-gray-100 text-sm text-gray-700 whitespace-nowrap;
 }
 
 .data-table tbody tr {
-  @apply transition-all duration-200;
-}
-
-.data-table tbody tr:hover {
-  @apply bg-gray-50;
+  @apply hover:bg-gray-50/50 transition-colors;
 }
 
 .data-table tbody tr:last-child td {

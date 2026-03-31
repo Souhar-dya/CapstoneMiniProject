@@ -3,7 +3,7 @@ import random
 from fastapi.testclient import TestClient
 from app.main import app
 
-client = TestClient(app)
+client = TestClient(app, base_url="http://testserver/api")
 
 
 def test_register_user():

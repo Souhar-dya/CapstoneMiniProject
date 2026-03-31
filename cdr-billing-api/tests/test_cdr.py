@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from datetime import datetime, timezone
 
-client = TestClient(app)
+client = TestClient(app, base_url="http://testserver/api")
 
 
 def test_add_cdr():

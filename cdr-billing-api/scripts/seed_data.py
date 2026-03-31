@@ -123,6 +123,40 @@ def seed_cdr_records(user_ids):
     return result.inserted_ids
 
 
+def seed_billing(user_ids):
+    billing_collection = db["billing"]
+
+    billing_collection.delete_many({})
+
+    billing_records = [
+        {
+            "user_id": ObjectId(user_ids[1]),
+            "billing_cycle": "September 2024",
+            "total_amount": 50.0,
+            "status": "paid",
+            "generated_at": datetime.utcnow()
+        },
+        {
+            "user_id": ObjectId(user_ids[1]),
+            "billing_cycle": "October 2024",
+            "total_amount": 45.5,
+            "status": "pending",
+            "generated_at": datetime.utcnow()
+        },
+        {
+            "user_id": ObjectId(user_ids[2]),
+            "billing_cycle": "October 2024",
+            "total_amount": 60.0,
+            "status": "pending",
+            "generated_at": datetime.utcnow()
+        }
+    ]
+
+    result = billing_collection.insert_many(billing_records)
+    print(f"Inserted {len(result.inserted_ids)} billing records")
+    return result.inserted_ids
+
+
 def main():
     print("Starting seed data insertion...")
 
@@ -130,6 +164,7 @@ def main():
         plan_ids = seed_plans()
         user_ids = seed_users(plan_ids)
         cdr_ids = seed_cdr_records(user_ids)
+        billing_ids = seed_billing(user_ids)
 
         print("Seed data inserted successfully!")
     except Exception as e:

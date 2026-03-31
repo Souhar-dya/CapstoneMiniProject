@@ -53,7 +53,40 @@ export default function Dashboard() {
         default:
           response = []
       }
-      setData(Array.isArray(response) ? response : response.data || [])
+      
+      let tableData = Array.isArray(response) ? response : response.data || []
+
+      // If we are looking at billing or CDR, replace user_id with username and email
+      if (['billing', 'cdr'].includes(endpoint) && tableData.length > 0) {
+        if (user.role === 'admin') {
+          // fetch all users to map user_id
+          try {
+            const allUsers = await api.getUsers(token)
+            const userMap = {}
+            allUsers.forEach(u => { userMap[u.id || u._id] = u })
+            tableData = tableData.map(item => {
+              const u = userMap[item.user_id]
+              if (u) {
+                // eslint-disable-next-line no-unused-vars
+                const { user_id, ...rest } = item
+                return { username: u.name, email: u.email, ...rest }
+              }
+              return item
+            })
+          } catch(e) {
+            console.error('Failed to fetch users to map names', e)
+          }
+        } else {
+          // Customer is only seeing their own data
+          tableData = tableData.map(item => {
+            // eslint-disable-next-line no-unused-vars
+            const { user_id, ...rest } = item
+            return { username: user.name, email: user.email, ...rest }
+          })
+        }
+      }
+
+      setData(tableData)
     } catch (err) {
       console.error(`Error loading ${endpoint}:`, err)
       setError(err.message || `Failed to load ${endpoint}`)
@@ -61,7 +94,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, user.role, user.name, user.email])
 
   useEffect(() => {
     loadData(activeTab)
@@ -134,125 +167,162 @@ export default function Dashboard() {
     }
   }
 
+  const tabs = [
+    ...(user.role === 'admin' ? [{ key: 'users', label: 'Users' }] : []),
+    { key: 'plans', label: 'Plans' },
+    { key: 'billing', label: 'Billing' },
+    { key: 'cdr', label: 'CDR' },
+  ]
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
-      <header className="bg-gradient-to-r from-blue-500 via-blue-500 to-purple-600 text-white px-8 py-6 shadow-lg">
-        <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold">CDR Billing Dashboard</h1>
-          <div className="flex items-center gap-6">
-            <span className="text-sm font-semibold opacity-90">Welcome, <span className="text-lg">{user.name || 'User'}</span></span>
-            {user.role === 'admin' && (
-              <button 
-                onClick={handleGenerateData}
-                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
-              >
-                Generate Sample Data
-              </button>
-            )}
-            <button 
-              onClick={handleLogout}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 border-2 border-white/40 text-white rounded-lg font-semibold transition-all duration-300 hover:-translate-y-0.5"
-            >
-              Logout
-            </button>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      {/* Top Navigation */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            
+            {/* Left side: Logo & Desktop Tabs */}
+            <div className="flex items-center flex-1">
+              <div className="flex-shrink-0 flex items-center gap-3">
+                <div className="w-8 h-8 bg-indigo-600 rounded shadow-sm flex items-center justify-center">
+                  <span className="text-white font-bold text-lg leading-none">C</span>
+                </div>
+                <span className="font-bold text-xl text-gray-900 tracking-tight block sm:mr-4">CDR Billing</span>
+              </div>
+              
+              {/* Desktop Nav Tabs */}
+              <div className="hidden sm:flex h-full items-center gap-6 lg:gap-8 ml-4 lg:ml-10">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`inline-flex items-center px-1 py-5 border-b-2 text-sm font-medium transition-colors ${
+                      activeTab === tab.key
+                        ? 'border-indigo-600 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right side: Actions & User */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {user.role === 'admin' && (
+                <button 
+                  onClick={handleGenerateData}
+                  className="text-xs sm:text-sm px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-md font-medium hover:bg-indigo-100 transition-colors"
+                >
+                  Generate Data
+                </button>
+              )}
+              <div className="flex items-center gap-3 border-l border-gray-200 pl-3 sm:pl-4">
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-sm font-semibold text-gray-700 leading-tight">{user.name || 'User'}</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{user.role || 'Member'}</span>
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold sm:hidden">
+                  {(user.name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="text-sm text-gray-500 hover:text-gray-900 transition-colors ml-2"
+                  title="Sign out"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
 
-      <nav className="bg-white border-b-2 border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex gap-0">
-          {user.role === 'admin' && (
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
-                activeTab === 'users'
-                  ? 'border-blue-500 text-blue-500 bg-blue-50'
-                  : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
-              }`}
-            >
-              Users
-            </button>
-          )}
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
-              activeTab === 'plans'
-                ? 'border-blue-500 text-blue-500 bg-blue-50'
-                : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
-            }`}
-          >
-            Plans
-          </button>
-          <button
-            onClick={() => setActiveTab('billing')}
-            className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
-              activeTab === 'billing'
-                ? 'border-blue-500 text-blue-500 bg-blue-50'
-                : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
-            }`}
-          >
-            Billing
-          </button>
-          <button
-            onClick={() => setActiveTab('cdr')}
-            className={`px-6 py-4 font-semibold transition-all duration-300 border-b-4 text-sm tracking-wide ${
-              activeTab === 'cdr'
-                ? 'border-blue-500 text-blue-500 bg-blue-50'
-                : 'border-transparent text-gray-600 hover:text-blue-500 hover:bg-gray-50'
-            }`}
-          >
-            CDR
-          </button>
+        {/* Mobile Nav Tabs */}
+        <div className="sm:hidden border-t border-gray-200 bg-gray-50 overflow-x-auto">
+          <div className="flex px-4 gap-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`py-3 flex-shrink-0 text-sm font-medium border-b-2 ${
+                  activeTab === tab.key
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
 
-      <div className="flex-1 px-8 py-8 max-w-7xl mx-auto w-full">
+      {/* Page Header */}
+      <header className="bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] z-10 relative relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <h1 className="text-2xl font-bold text-gray-900 capitalize tracking-tight m-0">
+            {tabs.find(t => t.key === activeTab)?.label || activeTab}
+          </h1>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading && (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-              <p className="text-gray-600 font-semibold">Loading...</p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
+            <p className="text-sm font-medium">Loading data...</p>
           </div>
         )}
 
         {error && (
-          <div className="alert alert-error">
-            {error}
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md shadow-sm mb-6">
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
 
         {!loading && !error && data.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-500 text-lg font-medium">No data available</p>
+          <div className="bg-white border text-center border-gray-200 border-dashed rounded-lg py-16 px-4 flex flex-col items-center">
+             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-400">
+               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+               </svg>
+             </div>
+            <p className="text-gray-900 font-medium text-base mb-1">No data available</p>
+            <p className="text-gray-500 text-sm">Check back later or generate sample data.</p>
           </div>
         )}
 
         {!loading && !error && data.length > 0 && (
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  {Object.keys(data[0]).map((key) => (
-                    <th key={key}>{key}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item, idx) => (
-                  <tr key={idx}>
-                    {Object.values(item).map((value, i) => (
-                      <td key={i} className="truncate" title={String(value)}>
-                        {String(value).substring(0, 50)}
-                      </td>
+          <div className="table-container shadow-sm border border-gray-200 rounded-lg bg-white overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="data-table min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {Object.keys(data[0]).map((key) => (
+                      <th key={key} scope="col" className="px-6 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                        {key.replace(/_/g, ' ')}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {data.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                      {Object.values(item).map((value, i) => (
+                        <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 truncate max-w-xs" title={String(value)}>
+                          {String(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }
